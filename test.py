@@ -83,8 +83,19 @@ def main(args):
     result_filter = keep_bbox_from_lidar_range(result_filter, pcd_limit_range)
     lidar_bboxes = result_filter['lidar_bboxes']
     labels, scores = result_filter['labels'], result_filter['scores']
-
-    vis_pc(pc, bboxes=lidar_bboxes, labels=labels)
+    #print(lidar_bboxes)
+    #print(labels)
+    #print(scores)
+    output_path = args.pc_path + '.txt'
+    with open(output_path, "w") as file:
+        for i in range(len(labels)):
+            for j in lidar_bboxes[i]:
+                file.write(str(j)+ ' ')
+            file.write(str(labels[i])+ ' ')
+            file.write(str(scores[i])+ ' ')
+            file.write('\n')
+    if args.v:
+        vis_pc(pc, bboxes=lidar_bboxes, labels=labels)
 
     if calib_info is not None and img is not None:
         bboxes2d, camera_bboxes = result_filter['bboxes2d'], result_filter['camera_bboxes'] 
@@ -133,6 +144,8 @@ if __name__ == '__main__':
     parser.add_argument('--img_path', default='', help='your image path')
     parser.add_argument('--no_cuda', action='store_true',
                         help='whether to use cuda')
+    parser.add_argument('--v', 
+                        action='store_true')
     args = parser.parse_args()
 
     main(args)

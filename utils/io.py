@@ -1,7 +1,8 @@
 import numpy as np
 import os
 import pickle
-
+import open3d as o3d
+import pandas as pd
 
 def read_pickle(file_path, suffix='.pkl'):
     assert os.path.splitext(file_path)[1] == suffix
@@ -14,12 +15,49 @@ def write_pickle(results, file_path):
     with open(file_path, 'wb') as f:
         pickle.dump(results, f)
 
+def read_pcd_ascii(filename):
+    points = []
+    with open(filename, "r") as f:
+        lines = f.readlines()
+        for line in lines:
+            # Skip header (lines starting with alphabetic characters)
+            if line[0].isalpha():
+                continue
+            # Extract x, y, z coordinates (assuming space-separated)
+            values = line.split()
+            X = float(values[0])
+            # Skip entries that did not reflect anything and have coordinates 0, 0, 0
+            if (X == 0.0):
+                continue
+            Y = float(values[1])
+            Z = float(values[2])
+            I = float(values[5])
+            points.append([None, X, Y, Z, I, None, None, None, None, None])
+    df = pd.DataFrame(
+        points, columns=["ID", "X", "Y", "Z", "I", "X_cf", "Y_cf", "Z_cf", "u", "v"]
+    )
+    max_I = 375.0  # MR hardcoded
+    min_I = df["I"].values.min()
+    #df["I"] = np.where(df["I"] > max_I, max_I, df["I"])
+    #df["I"] = (((df["I"] - min_I) / (max_I - min_I)) * 255).astype(int)
+    df["I"] /= 1024
+    df["ID"] = np.arange(1, len(df) + 1)
+    # df.to_csv("/home/dell/tram-project/camera_calibration/opencv-camera-calibration/measurements/pandas_output.txt", sep=' ', index=False)
+    return df
 
 def read_points(file_path, dim=4):
     suffix = os.path.splitext(file_path)[1] 
-    assert suffix in ['.bin', '.ply']
+    assert suffix in ['.bin', '.ply', '.pcd']
     if suffix == '.bin':
-        return np.fromfile(file_path, dtype=np.float32).reshape(-1, dim)
+        out = np.fromfile(file_path, dtype=np.float32).reshape(-1, dim)
+        #breakpoint()
+        return out
+    elif suffix == '.pcd':
+        pcd = read_pcd_ascii(file_path)
+        out_arr = pcd[['X','Y','Z','I']].to_numpy()
+        out_arr = np.asarray(out_arr,dtype=np.float32)
+        #breakpoint()
+        return out_arr
     else:
         raise NotImplementedError
 
