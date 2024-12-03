@@ -12,7 +12,7 @@ from utils import setup_seed, read_points, read_calib, read_label, \
 from model import PointPillars
 
 
-def point_range_filter(pts, point_range=[0, -39.68, -3, 69.12, 39.68, 1]):
+def point_range_filter(pts, point_range=[-69.12, -39.68, -3, 69.12, 39.68, 3]):
     '''
     data_dict: dict(pts, gt_bboxes_3d, gt_labels, gt_names, difficulty)
     point_range: [x1, y1, z1, x2, y2, z2]
@@ -35,7 +35,7 @@ def main(args):
         'Car': 2
         }
     LABEL2CLASSES = {v:k for k, v in CLASSES.items()}
-    pcd_limit_range = np.array([0, -40, -3, 70.4, 40, 0.0], dtype=np.float32)
+    pcd_limit_range = np.array([-70, -40, -3, 70.4, 40, 3], dtype=np.float32)
 
     if not args.no_cuda:
         model = PointPillars(nclasses=len(CLASSES)).cuda()
@@ -50,6 +50,9 @@ def main(args):
     pc = read_points(args.pc_path)
     pc = point_range_filter(pc)
     pc_torch = torch.from_numpy(pc)
+    pc2 = pc[pc[:, 0] < 0]
+    pc2[:,0] *= -1
+    pc_torch2 = torch.from_numpy(pc2)
     if os.path.exists(args.calib_path):
         calib_info = read_calib(args.calib_path)
     else:
@@ -69,9 +72,14 @@ def main(args):
     with torch.no_grad():
         if not args.no_cuda:
             pc_torch = pc_torch.cuda()
+            pc_torch2 = pc_torch2.cuda()
         
         result_filter = model(batched_pts=[pc_torch], 
                               mode='test')[0]
+        result_filter2 = model(batched_pts=[pc_torch2], 
+                                      mode='test')[0]
+                              
+    '''
     if calib_info is not None and img is not None:
         tr_velo_to_cam = calib_info['Tr_velo_to_cam'].astype(np.float32)
         r0_rect = calib_info['R0_rect'].astype(np.float32)
@@ -79,10 +87,22 @@ def main(args):
 
         image_shape = img.shape[:2]
         result_filter = keep_bbox_from_image_range(result_filter, tr_velo_to_cam, r0_rect, P2, image_shape)
+    '''
 
     result_filter = keep_bbox_from_lidar_range(result_filter, pcd_limit_range)
     lidar_bboxes = result_filter['lidar_bboxes']
     labels, scores = result_filter['labels'], result_filter['scores']
+
+
+    #the other half
+    result_filter2 = keep_bbox_from_lidar_range(result_filter2, pcd_limit_range)
+    lidar_bboxes2 = result_filter2['lidar_bboxes']
+    lidar_bboxes2[:,0] *= -1
+    labels2, scores2 = result_filter2['labels'], result_filter2['scores']
+    #breakpoint()
+    labels = np.append(labels, labels2)
+    scores = np.append(scores,scores2)
+    lidar_bboxes = np.vstack((lidar_bboxes,lidar_bboxes2))
     #print(lidar_bboxes)
     #print(labels)
     #print(scores)
