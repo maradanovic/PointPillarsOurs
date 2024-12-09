@@ -40,7 +40,7 @@ def read_pcd_ascii(filename):
     min_I = df["I"].values.min()
     #df["I"] = np.where(df["I"] > max_I, max_I, df["I"])
     #df["I"] = (((df["I"] - min_I) / (max_I - min_I)) * 255).astype(int)
-    df["I"] /= 1024
+    df["I"] /= 4096
     df["ID"] = np.arange(1, len(df) + 1)
     # df.to_csv("/home/dell/tram-project/camera_calibration/opencv-camera-calibration/measurements/pandas_output.txt", sep=' ', index=False)
     return df
