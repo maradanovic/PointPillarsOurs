@@ -70,6 +70,7 @@ def vis_pc(pc, bboxes=None, labels=None):
     bboxes: np.ndarray, (n, 7) or (n, 8, 3)
     labels: (n, )
     '''
+    print(bboxes.shape)
     if isinstance(pc, np.ndarray):
         pc = npy2ply(pc)
     

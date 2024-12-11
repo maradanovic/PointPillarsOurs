@@ -103,10 +103,19 @@ def main(args):
     labels = np.append(labels, labels2)
     scores = np.append(scores,scores2)
     lidar_bboxes = np.vstack((lidar_bboxes,lidar_bboxes2))
+
+    # threshold = 0.2
+    # indices_to_remove = np.where(scores < threshold)[0]
+    # labels = np.delete(labels, indices_to_remove)
+    # scores = np.delete(scores, indices_to_remove)
+    # lidar_bboxes = np.delete(lidar_bboxes, indices_to_remove, axis=0)
+
     #print(lidar_bboxes)
     #print(labels)
     #print(scores)
     output_path = args.pc_path + '.txt'
+    print(output_path)
+    print(len(labels))
     with open(output_path, "w") as file:
         for i in range(len(labels)):
             for j in lidar_bboxes[i]:
