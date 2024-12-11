@@ -104,11 +104,16 @@ def main(args):
     scores = np.append(scores,scores2)
     lidar_bboxes = np.vstack((lidar_bboxes,lidar_bboxes2))
 
-    # threshold = 0.2
-    # indices_to_remove = np.where(scores < threshold)[0]
-    # labels = np.delete(labels, indices_to_remove)
-    # scores = np.delete(scores, indices_to_remove)
-    # lidar_bboxes = np.delete(lidar_bboxes, indices_to_remove, axis=0)
+    score_threshold = 0.3
+    scores_to_remove = np.where(scores < score_threshold)[0]
+    labels = np.delete(labels, scores_to_remove)
+    scores = np.delete(scores, scores_to_remove)
+    lidar_bboxes = np.delete(lidar_bboxes, scores_to_remove, axis=0)
+    labels_to_remove = np.where(labels != 2)[0]
+    labels = np.delete(labels, labels_to_remove)
+    scores = np.delete(scores, labels_to_remove)
+    lidar_bboxes = np.delete(lidar_bboxes, labels_to_remove, axis=0)
+
 
     #print(lidar_bboxes)
     #print(labels)
